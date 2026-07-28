@@ -7,6 +7,8 @@ JsonScalar: TypeAlias = None | bool | int | float | str
 CriterionKind: TypeAlias = Literal["exact_text", "contains_text", "json_equal"]
 CandidateStatus: TypeAlias = Literal["ok", "timeout", "error"]
 ResultStatus: TypeAlias = Literal["passed", "failed", "timeout", "error", "missing"]
+HumanLabelValue: TypeAlias = Literal["pass", "fail", "abstain"]
+ConsensusStatus: TypeAlias = Literal["pass", "fail", "tied", "insufficient"]
 
 
 @dataclass(frozen=True, slots=True)
@@ -147,3 +149,80 @@ class ComparisonReport:
     method_version: str
     overall: ComparisonSummary
     slices: tuple[SliceComparison, ...]
+
+
+@dataclass(frozen=True, slots=True)
+class HumanAnnotation:
+    annotator_id: str
+    case_id: str
+    label: HumanLabelValue
+
+
+@dataclass(frozen=True, slots=True)
+class HumanLabelSet:
+    provenance: Provenance
+    dataset_sha256: str
+    candidates_sha256: str
+    annotations: tuple[HumanAnnotation, ...]
+
+
+@dataclass(frozen=True, slots=True)
+class ConsensusResult:
+    case_id: str
+    status: ConsensusStatus
+    basis: str
+    pass_votes: int
+    fail_votes: int
+    abstain_votes: int
+
+
+@dataclass(frozen=True, slots=True)
+class PairAgreement:
+    pair_index: int
+    overlapping_cases: int
+    agreements: int
+    agreement_rate: str | None
+
+
+@dataclass(frozen=True, slots=True)
+class AgreementStatistics:
+    alpha: str | None
+    observed_disagreements: int
+    observed_pairs: int
+    expected_disagreements: int
+    expected_pairs: int
+    comparable_cases: int
+    non_abstaining_labels: int
+
+
+@dataclass(frozen=True, slots=True)
+class CalibrationSummary:
+    true_positive: int
+    true_negative: int
+    false_positive: int
+    false_negative: int
+    evaluator_non_success: int
+    human_unresolved: int
+    human_insufficient: int
+    evaluated_resolved: int
+    status: str
+    warnings: tuple[str, ...]
+
+
+@dataclass(frozen=True, slots=True)
+class HumanEvidenceReport:
+    schema_version: str
+    dataset_sha256: str
+    candidates_sha256: str
+    labels_sha256: str
+    annotator_count: int
+    annotation_count: int
+    unanimous_cases: int
+    majority_cases: int
+    tied_cases: int
+    insufficient_cases: int
+    abstention_count: int
+    consensus: tuple[ConsensusResult, ...]
+    agreement: AgreementStatistics
+    pair_agreements: tuple[PairAgreement, ...]
+    calibration: CalibrationSummary

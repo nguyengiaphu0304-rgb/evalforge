@@ -17,7 +17,7 @@
 
 ## v0.3: judge research
 
-- [ ] Human-label schema and inter-rater agreement evidence.
+- [x] Human-label schema and inter-rater agreement evidence.
 - [ ] Calibrated judge adapters with prompt-injection boundaries.
 - [ ] Cost, retry, truncation, and provider-version lineage.
 
