@@ -9,6 +9,8 @@ CandidateStatus: TypeAlias = Literal["ok", "timeout", "error"]
 ResultStatus: TypeAlias = Literal["passed", "failed", "timeout", "error", "missing"]
 HumanLabelValue: TypeAlias = Literal["pass", "fail", "abstain"]
 ConsensusStatus: TypeAlias = Literal["pass", "fail", "tied", "insufficient"]
+JudgeStatus: TypeAlias = Literal["ok", "timeout", "error", "truncated"]
+JudgeDecision: TypeAlias = Literal["pass", "fail", "abstain"]
 
 
 @dataclass(frozen=True, slots=True)
@@ -226,3 +228,77 @@ class HumanEvidenceReport:
     agreement: AgreementStatistics
     pair_agreements: tuple[PairAgreement, ...]
     calibration: CalibrationSummary
+
+
+@dataclass(frozen=True, slots=True)
+class JudgeConfiguration:
+    adapter_id: str
+    provider: str
+    model: str
+    model_version: str
+    policy_sha256: str
+    response_schema: str
+
+
+@dataclass(frozen=True, slots=True)
+class JudgeRecord:
+    case_id: str
+    request_sha256: str
+    status: JudgeStatus
+    decision: JudgeDecision | None
+    reason_codes: tuple[str, ...]
+    attempts: int
+    input_tokens: int
+    output_tokens: int
+    latency_ms: int
+    cost_microusd: int
+
+
+@dataclass(frozen=True, slots=True)
+class JudgeRecordSet:
+    provenance: Provenance
+    dataset_sha256: str
+    candidates_sha256: str
+    configuration: JudgeConfiguration
+    records: tuple[JudgeRecord, ...]
+
+
+@dataclass(frozen=True, slots=True)
+class JudgeCalibration:
+    true_positive: int
+    true_negative: int
+    false_positive: int
+    false_negative: int
+    judge_abstain: int
+    judge_non_success: int
+    human_unresolved: int
+    human_insufficient: int
+    resolved_human_cases: int
+    evaluated_resolved: int
+    coverage: str
+    status: str
+    warnings: tuple[str, ...]
+
+
+@dataclass(frozen=True, slots=True)
+class JudgeEvidenceReport:
+    schema_version: str
+    dataset_sha256: str
+    candidates_sha256: str
+    human_labels_sha256: str
+    judge_records_sha256: str
+    configuration: JudgeConfiguration
+    total_cases: int
+    ok_cases: int
+    timeout_cases: int
+    error_cases: int
+    truncated_cases: int
+    pass_decisions: int
+    fail_decisions: int
+    abstain_decisions: int
+    total_attempts: int
+    total_input_tokens: int
+    total_output_tokens: int
+    total_latency_ms: int
+    total_cost_microusd: int
+    calibration: JudgeCalibration

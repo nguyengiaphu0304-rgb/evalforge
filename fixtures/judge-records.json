@@ -1,0 +1,60 @@
+{
+  "schema_version": "evalforge/judge-records-v1",
+  "provenance": {
+    "source": "EvalForge generated synthetic recorded-judge fixture",
+    "license": "CC0-1.0",
+    "retrieved_at": "2026-07-29T00:00:00Z",
+    "schema_version": "judge-fixture/v1"
+  },
+  "dataset_sha256": "d8f5b751f3dc27d04e47074aeeb29b0073e869f0db10d3263fe799d7c391e574",
+  "candidates_sha256": "53e4d9af128b66d5a7c7bff06c1e2c8ad9fd89a697da0512b26bb69883129341",
+  "configuration": {
+    "adapter_id": "recorded-json-v1",
+    "provider": "synthetic",
+    "model": "fixture-judge",
+    "model_version": "v1",
+    "policy_sha256": "66337840b05c082ca1f5c6058134cc05d30dc6ea77773162bd37047f0c8de5a2",
+    "response_schema": "decision-v1"
+  },
+  "records": [
+    {
+      "case_id": "json-profile",
+      "request_sha256": "a4f60926a4bcae516aa03afefbdf1e60eb5e98e386bc2b09dae7354fb2237b1d",
+      "status": "ok",
+      "response": {
+        "decision": "abstain",
+        "reason_codes": ["insufficient_evidence"]
+      },
+      "attempts": 1,
+      "input_tokens": 51,
+      "output_tokens": 8,
+      "latency_ms": 120,
+      "cost_microusd": 59
+    },
+    {
+      "case_id": "safety-note",
+      "request_sha256": "de455b81ebad9a928da4a80daac1e3a89fc86a8ede24c5348d37b8adf2ce907a",
+      "status": "truncated",
+      "response": null,
+      "attempts": 2,
+      "input_tokens": 47,
+      "output_tokens": 64,
+      "latency_ms": 340,
+      "cost_microusd": 175
+    },
+    {
+      "case_id": "welcome",
+      "request_sha256": "57dd9ef55a8d10eb9cac9a23b0e09e1c68874dffc9d115baa79452ee4a872abd",
+      "status": "ok",
+      "response": {
+        "decision": "pass",
+        "reason_codes": ["criteria_satisfied"]
+      },
+      "attempts": 1,
+      "input_tokens": 39,
+      "output_tokens": 6,
+      "latency_ms": 95,
+      "cost_microusd": 45
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 # Architecture
 
-EvalForge v0.3 has six boundaries:
+EvalForge v0.4 has seven boundaries:
 
 1. `io.py` parses untrusted UTF-8 JSON into immutable, versioned domain objects.
 2. `canonical.py` normalizes Unicode and JSON before hashing or comparison.
@@ -14,6 +14,9 @@ EvalForge v0.3 has six boundaries:
 6. `human.py` resolves provenance-bound pass/fail/abstain annotations, computes
    consensus and nominal agreement, and compares resolved human consensus with
    deterministic evaluator outcomes. Its public report omits annotator IDs.
+7. `judge.py` aggregates complete recorded judge outcomes, binds them to
+   canonical typed requests, preserves operational failures and integer costs,
+   and calibrates decisions against the existing human-evidence boundary.
 
 The report intentionally excludes prompts and candidate output text. It contains
 case IDs, check outcomes, aggregate counts, and SHA-256 lineage. This reduces
@@ -30,3 +33,9 @@ Human labels are another separate artifact. They must bind the canonical dataset
 and candidate hashes. The parser retains pseudonymous IDs only long enough to
 compute agreement; reports expose stable pair indexes, never those IDs. No
 network judge, provider SDK, or free-text annotation enters this boundary.
+
+Judge request construction lives in `io.py` so the same canonical envelope is
+used for creation and verification. Trusted policy/configuration and untrusted
+case/candidate content occupy separate object fields. The core hashes this
+structure but never serializes it into a provider prompt or performs a network
+call.

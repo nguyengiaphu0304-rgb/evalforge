@@ -17,6 +17,14 @@
   become agreement or calibration successes.
 - Public human-evidence reports omit annotator IDs and reject identity fields or
   free-text notes.
+- Recorded judge outcomes cannot attach to a different canonical request,
+  dataset, candidate run, policy hash, or provider/model version.
+- Instruction-like candidate text remains under an untrusted request field and
+  cannot overwrite trusted policy fields through parsing.
+- Free-text judge rationales, credentials, endpoints, provider request IDs, and
+  exception text are not accepted artifact fields.
+- Timeout, error, truncation, abstention, low coverage, and failed human gates
+  cannot become a positive calibration conclusion.
 
 ## Untrusted inputs
 
@@ -24,6 +32,7 @@ Dataset JSON, recorded candidate output JSON, candidate-produced JSON text, and
 previously exported reports are untrusted.
 Slice artifacts and comparison reports are also untrusted.
 Human-label artifacts and human-evidence reports are also untrusted.
+Recorded-judge artifacts and judge-evidence reports are also untrusted.
 
 ## Residual risks
 
@@ -41,3 +50,9 @@ with outside knowledge. Report recipients still need appropriate access
 controls. Nominal alpha does not measure validity, annotator expertise, fairness,
 or representativeness; its operational threshold is a warning policy, not a
 scientific universal. Majority consensus can preserve shared bias.
+Typed field separation prevents structural instruction confusion inside
+EvalForge, but it does not prove that a future provider or model will follow the
+trusted policy. Policy hashes authenticate neither authorship nor safety.
+Recorded usage metadata can be false even when internally consistent. Micro-USD
+costs exclude undeclared provider charges. No live timeout, retry, rate-limit,
+credential, egress, or data-retention boundary has been exercised.

@@ -24,6 +24,11 @@ from evalforge.models import (
     HumanAnnotation,
     HumanLabelSet,
     HumanLabelValue,
+    JudgeConfiguration,
+    JudgeDecision,
+    JudgeRecord,
+    JudgeRecordSet,
+    JudgeStatus,
     Provenance,
     SliceDefinition,
     SliceSet,
@@ -37,8 +42,20 @@ MAX_CRITERIA_PER_CASE = 20
 MAX_SLICES = 100
 MAX_ANNOTATORS = 50
 MAX_ANNOTATIONS = 50_000
+MAX_JUDGE_ATTEMPTS = 10
+MAX_JUDGE_TOKENS = 1_000_000
+MAX_JUDGE_LATENCY_MS = 3_600_000
+MAX_JUDGE_COST_MICROUSD = 1_000_000_000
 MAX_TEXT_CODEPOINTS = 100_000
 _ID = re.compile(r"^[a-z0-9][a-z0-9._-]{0,63}$")
+_SHA256 = re.compile(r"^[0-9a-f]{64}$")
+_JUDGE_REASON_CODES = {
+    "criteria_satisfied",
+    "criteria_not_satisfied",
+    "insufficient_evidence",
+    "policy_blocked",
+    "malformed_candidate",
+}
 
 
 class SchemaError(ValueError):
@@ -92,6 +109,20 @@ def _identifier(value: object, label: str) -> str:
     if _ID.fullmatch(text) is None:
         raise SchemaError(f"{label} is invalid")
     return text
+
+
+def _integer(value: object, label: str, maximum: int, *, minimum: int = 0) -> int:
+    if isinstance(value, bool) or not isinstance(value, int):
+        raise SchemaError(f"{label} must be an integer")
+    if not minimum <= value <= maximum:
+        raise SchemaError(f"{label} is outside the supported range")
+    return value
+
+
+def _sha256(value: object, label: str) -> str:
+    if not isinstance(value, str) or _SHA256.fullmatch(value) is None:
+        raise SchemaError(f"{label} must be a lowercase SHA-256 digest")
+    return value
 
 
 def _timestamp(value: object) -> str:
@@ -445,3 +476,257 @@ def human_label_document(label_set: HumanLabelSet) -> dict[str, object]:
 
 def canonical_human_labels(label_set: HumanLabelSet) -> bytes:
     return canonical_bytes(human_label_document(label_set))
+
+
+def judge_request_document(
+    case: EvaluationCase,
+    candidate: CandidateOutput | None,
+    configuration: JudgeConfiguration,
+) -> dict[str, object]:
+    """Build a typed request whose trusted and untrusted fields never mix."""
+    return {
+        "schema_version": "evalforge/judge-request-v1",
+        "trusted": {
+            "adapter_id": configuration.adapter_id,
+            "policy_sha256": configuration.policy_sha256,
+            "response_schema": configuration.response_schema,
+            "criteria": [
+                {
+                    "criterion_id": criterion.criterion_id,
+                    "kind": criterion.kind,
+                    "expected": thaw_json(criterion.expected),
+                }
+                for criterion in case.criteria
+            ],
+        },
+        "untrusted": {
+            "case_id": case.case_id,
+            "case_input": case.input_text,
+            "candidate_status": "missing" if candidate is None else candidate.status,
+            "candidate_output": None if candidate is None else candidate.output,
+        },
+    }
+
+
+def _judge_configuration(value: object) -> JudgeConfiguration:
+    data = _mapping(
+        value,
+        {
+            "adapter_id",
+            "provider",
+            "model",
+            "model_version",
+            "policy_sha256",
+            "response_schema",
+        },
+        "judge configuration",
+    )
+    return JudgeConfiguration(
+        _identifier(data["adapter_id"], "judge adapter_id"),
+        _identifier(data["provider"], "judge provider"),
+        _identifier(data["model"], "judge model"),
+        _identifier(data["model_version"], "judge model_version"),
+        _sha256(data["policy_sha256"], "judge policy_sha256"),
+        _identifier(data["response_schema"], "judge response_schema"),
+    )
+
+
+def _judge_response(
+    status: JudgeStatus,
+    response: object,
+) -> tuple[JudgeDecision | None, tuple[str, ...]]:
+    if status != "ok":
+        if response is not None:
+            raise SchemaError("non-success judge response must be null")
+        return None, ()
+    response_data = _mapping(
+        response,
+        {"decision", "reason_codes"},
+        "judge response",
+    )
+    raw_decision = response_data["decision"]
+    if raw_decision not in {"pass", "fail", "abstain"}:
+        raise SchemaError("unsupported judge decision")
+    raw_reasons = response_data["reason_codes"]
+    if not isinstance(raw_reasons, list) or not 0 < len(raw_reasons) <= 10:
+        raise SchemaError("judge reason code count is invalid")
+    reason_codes = tuple(_identifier(reason, "judge reason code") for reason in raw_reasons)
+    if len(set(reason_codes)) != len(reason_codes):
+        raise SchemaError("duplicate judge reason code")
+    if set(reason_codes) - _JUDGE_REASON_CODES:
+        raise SchemaError("unsupported judge reason code")
+    return cast("JudgeDecision", raw_decision), tuple(sorted(reason_codes))
+
+
+def _judge_record(
+    value: object,
+    known_cases: dict[str, EvaluationCase],
+    candidate_by_case: dict[str, CandidateOutput],
+    configuration: JudgeConfiguration,
+) -> JudgeRecord:
+    data = _mapping(
+        value,
+        {
+            "case_id",
+            "request_sha256",
+            "status",
+            "response",
+            "attempts",
+            "input_tokens",
+            "output_tokens",
+            "latency_ms",
+            "cost_microusd",
+        },
+        "judge record",
+    )
+    case_id = _identifier(data["case_id"], "judge case_id")
+    if case_id not in known_cases:
+        raise SchemaError("judge record references an unknown case")
+    expected_request_hash = digest(
+        canonical_bytes(
+            judge_request_document(
+                known_cases[case_id],
+                candidate_by_case.get(case_id),
+                configuration,
+            )
+        )
+    )
+    if data["request_sha256"] != expected_request_hash:
+        raise SchemaError("judge request lineage mismatch")
+    raw_status = data["status"]
+    if raw_status not in {"ok", "timeout", "error", "truncated"}:
+        raise SchemaError("unsupported judge status")
+    status = cast("JudgeStatus", raw_status)
+    decision, reason_codes = _judge_response(status, data["response"])
+    return JudgeRecord(
+        case_id,
+        expected_request_hash,
+        status,
+        decision,
+        reason_codes,
+        _integer(data["attempts"], "judge attempts", MAX_JUDGE_ATTEMPTS, minimum=1),
+        _integer(data["input_tokens"], "judge input_tokens", MAX_JUDGE_TOKENS),
+        _integer(data["output_tokens"], "judge output_tokens", MAX_JUDGE_TOKENS),
+        _integer(data["latency_ms"], "judge latency_ms", MAX_JUDGE_LATENCY_MS),
+        _integer(data["cost_microusd"], "judge cost_microusd", MAX_JUDGE_COST_MICROUSD),
+    )
+
+
+def parse_judge_records(
+    raw: bytes,
+    dataset: Dataset,
+    candidates: tuple[CandidateOutput, ...],
+) -> JudgeRecordSet:
+    """Parse complete, recorded judge outcomes and verify every request binding."""
+    root = _mapping(
+        _load(raw),
+        {
+            "schema_version",
+            "provenance",
+            "dataset_sha256",
+            "candidates_sha256",
+            "configuration",
+            "records",
+        },
+        "judge record artifact",
+    )
+    if root["schema_version"] != "evalforge/judge-records-v1":
+        raise SchemaError("unsupported judge record schema version")
+    expected_dataset_hash = digest(canonical_dataset(dataset))
+    expected_candidates_hash = digest(canonical_candidates(candidates))
+    if root["dataset_sha256"] != expected_dataset_hash:
+        raise SchemaError("judge record dataset lineage mismatch")
+    if root["candidates_sha256"] != expected_candidates_hash:
+        raise SchemaError("judge record candidate lineage mismatch")
+    provenance_data = _mapping(
+        root["provenance"],
+        {"source", "license", "retrieved_at", "schema_version"},
+        "judge record provenance",
+    )
+    provenance = Provenance(
+        source=_text(provenance_data["source"], "judge record source"),
+        license=_text(provenance_data["license"], "judge record license"),
+        retrieved_at=_timestamp(provenance_data["retrieved_at"]),
+        schema_version=_text(
+            provenance_data["schema_version"],
+            "judge record provenance schema version",
+        ),
+    )
+    configuration = _judge_configuration(root["configuration"])
+    values = root["records"]
+    if not isinstance(values, list) or len(values) != len(dataset.cases):
+        raise SchemaError("judge record count must match the dataset")
+    known_cases = {case.case_id: case for case in dataset.cases}
+    candidate_by_case = {candidate.case_id: candidate for candidate in candidates}
+    unknown_candidates = sorted(set(candidate_by_case) - set(known_cases))
+    if unknown_candidates:
+        raise SchemaError("judge candidates contain unknown case IDs")
+    records: list[JudgeRecord] = []
+    seen: set[str] = set()
+    for value in values:
+        record = _judge_record(
+            value,
+            known_cases,
+            candidate_by_case,
+            configuration,
+        )
+        if record.case_id in seen:
+            raise SchemaError("duplicate judge case record")
+        seen.add(record.case_id)
+        records.append(record)
+    return JudgeRecordSet(
+        provenance,
+        expected_dataset_hash,
+        expected_candidates_hash,
+        configuration,
+        tuple(sorted(records, key=lambda item: item.case_id)),
+    )
+
+
+def judge_record_document(record_set: JudgeRecordSet) -> dict[str, object]:
+    """Convert judge records to their canonical source document."""
+    configuration = record_set.configuration
+    return {
+        "schema_version": "evalforge/judge-records-v1",
+        "provenance": {
+            "source": record_set.provenance.source,
+            "license": record_set.provenance.license,
+            "retrieved_at": record_set.provenance.retrieved_at,
+            "schema_version": record_set.provenance.schema_version,
+        },
+        "dataset_sha256": record_set.dataset_sha256,
+        "candidates_sha256": record_set.candidates_sha256,
+        "configuration": {
+            "adapter_id": configuration.adapter_id,
+            "provider": configuration.provider,
+            "model": configuration.model,
+            "model_version": configuration.model_version,
+            "policy_sha256": configuration.policy_sha256,
+            "response_schema": configuration.response_schema,
+        },
+        "records": [
+            {
+                "case_id": item.case_id,
+                "request_sha256": item.request_sha256,
+                "status": item.status,
+                "response": (
+                    {
+                        "decision": item.decision,
+                        "reason_codes": list(item.reason_codes),
+                    }
+                    if item.status == "ok"
+                    else None
+                ),
+                "attempts": item.attempts,
+                "input_tokens": item.input_tokens,
+                "output_tokens": item.output_tokens,
+                "latency_ms": item.latency_ms,
+                "cost_microusd": item.cost_microusd,
+            }
+            for item in record_set.records
+        ],
+    }
+
+
+def canonical_judge_records(record_set: JudgeRecordSet) -> bytes:
+    return canonical_bytes(judge_record_document(record_set))

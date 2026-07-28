@@ -55,6 +55,10 @@ jobs:
           cp demo-output/human-evidence.json demo-output/human-evidence-first.json
           python scripts/human_evidence_demo.py --output demo-output/human-evidence.json
           cmp demo-output/human-evidence-first.json demo-output/human-evidence.json
+          python scripts/judge_evidence_demo.py --output demo-output/judge-evidence.json
+          cp demo-output/judge-evidence.json demo-output/judge-evidence-first.json
+          python scripts/judge_evidence_demo.py --output demo-output/judge-evidence.json
+          cmp demo-output/judge-evidence-first.json demo-output/judge-evidence.json
       - name: Build and inspect package
         run: |
           python -m build
@@ -71,7 +75,7 @@ jobs:
           with zipfile.ZipFile(wheel) as archive:
               names = archive.namelist()
               assert len(names) == len(set(names)) <= 64
-              assert all(name.startswith(("evalforge/", "evalforge-0.3.0.dist-info/")) for name in names)
+              assert all(name.startswith(("evalforge/", "evalforge-0.4.0.dist-info/")) for name in names)
           with tarfile.open(sdist, "r:gz") as archive:
               members = archive.getmembers()
               assert len(members) <= 128
@@ -83,7 +87,7 @@ jobs:
           python -m venv /tmp/evalforge-wheel
           /tmp/evalforge-wheel/bin/python -m pip install --no-index --no-deps dist/*.whl
           /tmp/evalforge-wheel/bin/python -I -c \
-            "import evalforge; assert evalforge.__version__ == '0.3.0'"
+            "import evalforge; assert evalforge.__version__ == '0.4.0'"
       - name: Dependency consistency
         run: python -m pip check
       - name: Vulnerability audit
