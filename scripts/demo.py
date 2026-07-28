@@ -15,6 +15,7 @@ def main() -> None:
     dataset = arguments.dataset.read_bytes()
     candidates = arguments.candidates.read_bytes()
     report = create_report(dataset, candidates)
+    arguments.output.parent.mkdir(parents=True, exist_ok=True)
     arguments.output.write_bytes(report)
     verify_report(dataset, candidates, report)
 
