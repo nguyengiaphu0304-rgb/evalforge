@@ -8,6 +8,7 @@ from typing import NoReturn, cast
 from evalforge.canonical import (
     CanonicalizationError,
     canonical_bytes,
+    digest,
     freeze_json,
     normalize_text,
     thaw_json,
@@ -20,6 +21,9 @@ from evalforge.models import (
     Dataset,
     EvaluationCase,
     EvaluationReport,
+    HumanAnnotation,
+    HumanLabelSet,
+    HumanLabelValue,
     Provenance,
     SliceDefinition,
     SliceSet,
@@ -31,6 +35,8 @@ MAX_ARTIFACT_BYTES = 1_048_576
 MAX_CASES = 1_000
 MAX_CRITERIA_PER_CASE = 20
 MAX_SLICES = 100
+MAX_ANNOTATORS = 50
+MAX_ANNOTATIONS = 50_000
 MAX_TEXT_CODEPOINTS = 100_000
 _ID = re.compile(r"^[a-z0-9][a-z0-9._-]{0,63}$")
 
@@ -332,3 +338,110 @@ def slice_document(slice_set: SliceSet) -> dict[str, object]:
 
 def canonical_slice_set(slice_set: SliceSet) -> bytes:
     return canonical_bytes(slice_document(slice_set))
+
+
+def parse_human_labels(
+    raw: bytes,
+    dataset: Dataset,
+    candidates: tuple[CandidateOutput, ...],
+) -> HumanLabelSet:
+    root = _mapping(
+        _load(raw),
+        {
+            "schema_version",
+            "provenance",
+            "dataset_sha256",
+            "candidates_sha256",
+            "annotations",
+        },
+        "human label artifact",
+    )
+    if root["schema_version"] != "evalforge/human-labels-v1":
+        raise SchemaError("unsupported human label schema version")
+    expected_dataset_hash = digest(canonical_dataset(dataset))
+    expected_candidates_hash = digest(canonical_candidates(candidates))
+    if root["dataset_sha256"] != expected_dataset_hash:
+        raise SchemaError("human label dataset lineage mismatch")
+    if root["candidates_sha256"] != expected_candidates_hash:
+        raise SchemaError("human label candidate lineage mismatch")
+    provenance_data = _mapping(
+        root["provenance"],
+        {"source", "license", "retrieved_at", "schema_version"},
+        "human label provenance",
+    )
+    provenance = Provenance(
+        source=_text(provenance_data["source"], "human label source"),
+        license=_text(provenance_data["license"], "human label license"),
+        retrieved_at=_timestamp(provenance_data["retrieved_at"]),
+        schema_version=_text(
+            provenance_data["schema_version"],
+            "human label provenance schema version",
+        ),
+    )
+    values = root["annotations"]
+    if not isinstance(values, list) or not 0 < len(values) <= MAX_ANNOTATIONS:
+        raise SchemaError("human annotation count is invalid")
+    known_cases = {case.case_id for case in dataset.cases}
+    annotations: list[HumanAnnotation] = []
+    assignments: set[tuple[str, str]] = set()
+    annotators: set[str] = set()
+    for value in values:
+        data = _mapping(value, {"annotator_id", "case_id", "label"}, "human annotation")
+        annotator_id = _identifier(data["annotator_id"], "annotator_id")
+        case_id = _identifier(data["case_id"], "human annotation case_id")
+        if case_id not in known_cases:
+            raise SchemaError("human annotation references an unknown case")
+        assignment = (annotator_id, case_id)
+        if assignment in assignments:
+            raise SchemaError("duplicate human annotation assignment")
+        assignments.add(assignment)
+        annotators.add(annotator_id)
+        if len(annotators) > MAX_ANNOTATORS:
+            raise SchemaError("human annotator count exceeds the limit")
+        raw_label = data["label"]
+        if raw_label not in {"pass", "fail", "abstain"}:
+            raise SchemaError("unsupported human annotation label")
+        annotations.append(
+            HumanAnnotation(
+                annotator_id,
+                case_id,
+                cast("HumanLabelValue", raw_label),
+            )
+        )
+    return HumanLabelSet(
+        provenance,
+        expected_dataset_hash,
+        expected_candidates_hash,
+        tuple(
+            sorted(
+                annotations,
+                key=lambda item: (item.case_id, item.annotator_id),
+            )
+        ),
+    )
+
+
+def human_label_document(label_set: HumanLabelSet) -> dict[str, object]:
+    return {
+        "schema_version": "evalforge/human-labels-v1",
+        "provenance": {
+            "source": label_set.provenance.source,
+            "license": label_set.provenance.license,
+            "retrieved_at": label_set.provenance.retrieved_at,
+            "schema_version": label_set.provenance.schema_version,
+        },
+        "dataset_sha256": label_set.dataset_sha256,
+        "candidates_sha256": label_set.candidates_sha256,
+        "annotations": [
+            {
+                "annotator_id": item.annotator_id,
+                "case_id": item.case_id,
+                "label": item.label,
+            }
+            for item in label_set.annotations
+        ],
+    }
+
+
+def canonical_human_labels(label_set: HumanLabelSet) -> bytes:
+    return canonical_bytes(human_label_document(label_set))

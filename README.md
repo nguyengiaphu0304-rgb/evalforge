@@ -1,10 +1,11 @@
 # EvalForge
 
 EvalForge is a provenance-first evaluation engine for recorded AI-system
-outputs. Its v0.2 core makes narrow deterministic claims: it validates bounded
+outputs. Its v0.3 core makes narrow deterministic claims: it validates bounded
 artifacts, preserves every case in the denominator, reproduces reports
 byte-for-byte, independently replays stored outcomes, and compares paired runs
-with explicit uncertainty and low-evidence warnings.
+with explicit uncertainty. It also measures agreement in provenance-bound human
+labels before any learned judge is considered.
 
 It is not a model leaderboard, a live inference gateway, or evidence that any
 real model is accurate.
@@ -23,6 +24,13 @@ real model is accurate.
 - Seeded, cross-version deterministic bootstrap intervals over paired pass
   indicators.
 - Provenance-linked overlapping slices with explicit membership and denominator.
+- Pseudonymous pass/fail/abstain human labels bound to exact dataset and candidate
+  artifacts.
+- Explicit unanimous, majority, tied, and insufficient consensus states.
+- Exact nominal Krippendorff's alpha, identity-free pair summaries, and
+  evaluator-versus-human confusion counts.
+- Low-sample, undefined-agreement, and evaluator-non-success warnings that block
+  quality claims.
 - Offline synthetic fixtures with no provider, private data, or benchmark claim.
 - Dependency-free typed runtime with Python 3.11–3.13 CI.
 
@@ -34,6 +42,7 @@ python -m venv .venv
 python -m pip install -e .
 python scripts/demo.py --output demo-output/report.json
 python scripts/comparison_demo.py --output demo-output/comparison.json
+python scripts/human_evidence_demo.py --output demo-output/human-evidence.json
 python -m pytest
 ```
 
@@ -45,6 +54,11 @@ The comparison demo records one regression across the same three synthetic
 cases. Because both the total sample and discordant-pair count are below the
 documented thresholds, its conclusion is `insufficient_evidence`.
 
+The human-evidence demo uses three synthetic pseudonymous raters and three
+synthetic cases. Its small sample and disagreement deliberately produce
+`insufficient_evidence`; it demonstrates arithmetic and failure handling, not
+human or evaluator quality.
+
 ## Verification
 
 ```bash
@@ -54,6 +68,7 @@ mypy src scripts
 pytest
 python scripts/demo.py --output demo-output/report.json
 python scripts/comparison_demo.py --output demo-output/comparison.json
+python scripts/human_evidence_demo.py --output demo-output/human-evidence.json
 python -m build
 python -m pip check
 python -m pip_audit --skip-editable
@@ -64,8 +79,11 @@ python -m pip_audit --skip-editable
 - [Architecture](docs/architecture.md)
 - [Schema contract](docs/schema.md)
 - [Comparison methodology](docs/comparison-methodology.md)
+- [Human-evidence methodology](docs/human-evidence.md)
 - [Threat model](docs/threat-model.md)
 - [ADR-001](docs/adr/001-deterministic-offline-core.md)
+- [ADR-002](docs/adr/002-paired-bootstrap-and-slices.md)
+- [ADR-003](docs/adr/003-human-consensus-and-nominal-alpha.md)
 - [Roadmap](docs/roadmap.md)
 - [Interview guide](docs/interview-guide.md)
 
@@ -74,6 +92,8 @@ python -m pip_audit --skip-editable
 Criteria can still be unrepresentative or poorly written. SHA-256 does not
 authenticate a publisher. NFC does not eliminate Unicode confusables. Reports
 retain case IDs. There is no sandbox, encryption, signing, live provider,
-LLM-as-a-judge, human-label calibration, causal inference, multiple-comparison
-correction, deployment, or production telemetry. Bootstrap intervals describe
-the declared paired sample; they do not establish general model quality.
+LLM-as-a-judge, identity service, adjudication workflow, causal inference,
+multiple-comparison correction, deployment, or production telemetry. Human
+label IDs are pseudonyms, not anonymity guarantees; case membership and vote
+patterns can still be identifying. Alpha and bootstrap intervals describe the
+declared samples and do not establish general model or annotator quality.

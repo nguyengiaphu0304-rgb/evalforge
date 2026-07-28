@@ -1,0 +1,22 @@
+{
+  "schema_version": "evalforge/human-labels-v1",
+  "provenance": {
+    "source": "EvalForge generated synthetic human-label fixture",
+    "license": "CC0-1.0",
+    "retrieved_at": "2026-07-29T00:00:00Z",
+    "schema_version": "human-fixture/v1"
+  },
+  "dataset_sha256": "d8f5b751f3dc27d04e47074aeeb29b0073e869f0db10d3263fe799d7c391e574",
+  "candidates_sha256": "53e4d9af128b66d5a7c7bff06c1e2c8ad9fd89a697da0512b26bb69883129341",
+  "annotations": [
+    {"annotator_id": "rater-a", "case_id": "welcome", "label": "pass"},
+    {"annotator_id": "rater-b", "case_id": "welcome", "label": "pass"},
+    {"annotator_id": "rater-c", "case_id": "welcome", "label": "pass"},
+    {"annotator_id": "rater-a", "case_id": "json-profile", "label": "pass"},
+    {"annotator_id": "rater-b", "case_id": "json-profile", "label": "fail"},
+    {"annotator_id": "rater-c", "case_id": "json-profile", "label": "abstain"},
+    {"annotator_id": "rater-a", "case_id": "safety-note", "label": "fail"},
+    {"annotator_id": "rater-b", "case_id": "safety-note", "label": "fail"},
+    {"annotator_id": "rater-c", "case_id": "safety-note", "label": "abstain"}
+  ]
+}

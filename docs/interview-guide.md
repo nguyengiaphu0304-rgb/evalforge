@@ -45,3 +45,32 @@ answers only the narrower pass-indicator question.
 Fewer than 30 cases or five discordant pairs produces
 `insufficient_evidence`. The thresholds are safeguards, not proof that a sample
 above them is representative. Conclusions remain explicitly descriptive.
+
+## Why distinguish abstention from failure?
+
+An abstention means the rater did not issue a binary judgment; treating it as a
+failure manufactures disagreement. EvalForge preserves abstention counts,
+excludes them from nominal pair arithmetic, and requires at least two
+non-abstaining labels before resolving a case.
+
+## Why nominal Krippendorff's alpha?
+
+It supports a varying number of usable labels per case and corrects observed
+disagreement by the pass/fail marginal distribution. EvalForge publishes the
+ordered disagreement and pair counts, computes with exact fractions, and emits
+`null` when expected disagreement is zero instead of inventing perfect
+agreement.
+
+## Why omit annotator IDs from reports?
+
+Agreement needs identity linkage during computation, but downstream calibration
+does not. Pair indexes preserve auditability without propagating pseudonyms.
+This is data minimization, not anonymity: case and vote patterns remain a
+residual re-identification risk.
+
+## Why is calibration still descriptive?
+
+The confusion matrix compares deterministic evaluator outcomes with resolved
+human consensus only. A small sample, low or undefined agreement, or evaluator
+non-success forces `insufficient_evidence`. Passing those gates still would not
+prove the labels representative, unbiased, or suitable for deployment.

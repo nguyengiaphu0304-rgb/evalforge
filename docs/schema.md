@@ -34,3 +34,22 @@ and slice hashes. It records the method version, unsigned 64-bit seed, resample
 count, confidence, thresholds, complete 5×5 status transitions, pass-indicator
 delta, interval, warnings, and per-slice summaries. Prompt and output bodies are
 not copied into the report.
+
+## Human-label artifacts
+
+`evalforge/human-labels-v1` requires provenance, the exact canonical dataset and
+candidate SHA-256 hashes, and one or more annotations. Each annotation contains
+only a pseudonymous annotator ID, known case ID, and `pass`, `fail`, or
+`abstain`. Each annotator/case assignment is unique. Identity attributes,
+free-text notes, unknown fields, duplicate normalized IDs, and lineage mismatch
+fail closed.
+
+Artifacts are limited to 50 annotators and 50,000 annotations under the common
+1 MiB limit. Ordering is canonicalized by case and annotator.
+
+`evalforge/human-evidence-v1` records vote counts and unanimous, majority, tied,
+or insufficient consensus per case; nominal Krippendorff's alpha components;
+identity-free pair overlap; and an evaluator-versus-human confusion matrix.
+Missing, timeout, and error evaluator states remain explicit. The envelope has a
+payload checksum and must reproduce byte-for-byte from all three source
+artifacts.

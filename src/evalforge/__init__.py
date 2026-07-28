@@ -6,17 +6,36 @@ from evalforge.comparison import (
     verify_comparison_report,
 )
 from evalforge.engine import EvaluationError, create_report, evaluate, verify_report
-from evalforge.io import SchemaError, parse_candidates, parse_dataset, parse_slice_set
+from evalforge.human import (
+    HumanEvidenceError,
+    analyze_human_evidence,
+    create_human_evidence_report,
+    verify_human_evidence_report,
+)
+from evalforge.io import (
+    SchemaError,
+    parse_candidates,
+    parse_dataset,
+    parse_human_labels,
+    parse_slice_set,
+)
 from evalforge.models import (
+    AgreementStatistics,
+    CalibrationSummary,
     CandidateOutput,
     CaseResult,
     CheckOutcome,
     ComparisonReport,
     ComparisonSummary,
+    ConsensusResult,
     Criterion,
     Dataset,
     EvaluationCase,
     EvaluationReport,
+    HumanAnnotation,
+    HumanEvidenceReport,
+    HumanLabelSet,
+    PairAgreement,
     Provenance,
     SliceComparison,
     SliceDefinition,
@@ -24,20 +43,28 @@ from evalforge.models import (
     Summary,
 )
 
-__version__ = "0.2.0"
+__version__ = "0.3.0"
 
 __all__ = [
+    "AgreementStatistics",
+    "CalibrationSummary",
     "CandidateOutput",
     "CaseResult",
     "CheckOutcome",
     "ComparisonError",
     "ComparisonReport",
     "ComparisonSummary",
+    "ConsensusResult",
     "Criterion",
     "Dataset",
     "EvaluationCase",
     "EvaluationError",
     "EvaluationReport",
+    "HumanAnnotation",
+    "HumanEvidenceError",
+    "HumanEvidenceReport",
+    "HumanLabelSet",
+    "PairAgreement",
     "Provenance",
     "SchemaError",
     "SliceComparison",
@@ -45,12 +72,16 @@ __all__ = [
     "SliceSet",
     "Summary",
     "__version__",
+    "analyze_human_evidence",
     "create_comparison_report",
+    "create_human_evidence_report",
     "create_report",
     "evaluate",
     "parse_candidates",
     "parse_dataset",
+    "parse_human_labels",
     "parse_slice_set",
     "verify_comparison_report",
+    "verify_human_evidence_report",
     "verify_report",
 ]
