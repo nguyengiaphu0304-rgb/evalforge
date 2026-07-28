@@ -89,3 +89,61 @@ class EvaluationReport:
     candidates_sha256: str
     results: tuple[CaseResult, ...]
     summary: Summary
+
+
+@dataclass(frozen=True, slots=True)
+class SliceDefinition:
+    slice_id: str
+    case_ids: tuple[str, ...]
+
+
+@dataclass(frozen=True, slots=True)
+class SliceSet:
+    provenance: Provenance
+    slices: tuple[SliceDefinition, ...]
+
+
+@dataclass(frozen=True, slots=True)
+class Transition:
+    candidate_a_status: ResultStatus
+    candidate_b_status: ResultStatus
+    count: int
+
+
+@dataclass(frozen=True, slots=True)
+class ComparisonSummary:
+    total_cases: int
+    candidate_a_passed: int
+    candidate_b_passed: int
+    improved_cases: int
+    regressed_cases: int
+    tied_cases: int
+    discordant_cases: int
+    pass_rate_delta: str
+    interval_lower: str
+    interval_upper: str
+    bootstrap_seed: int
+    conclusion: str
+    warnings: tuple[str, ...]
+    transitions: tuple[Transition, ...]
+
+
+@dataclass(frozen=True, slots=True)
+class SliceComparison:
+    slice_id: str
+    summary: ComparisonSummary
+
+
+@dataclass(frozen=True, slots=True)
+class ComparisonReport:
+    schema_version: str
+    dataset_sha256: str
+    candidate_a_sha256: str
+    candidate_b_sha256: str
+    slices_sha256: str
+    seed: int
+    resamples: int
+    confidence: str
+    method_version: str
+    overall: ComparisonSummary
+    slices: tuple[SliceComparison, ...]

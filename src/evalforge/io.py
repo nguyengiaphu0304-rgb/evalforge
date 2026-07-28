@@ -21,12 +21,16 @@ from evalforge.models import (
     EvaluationCase,
     EvaluationReport,
     Provenance,
+    SliceDefinition,
+    SliceSet,
 )
 
 SCHEMA_VERSION = "evalforge/v1"
+SLICE_SCHEMA_VERSION = "evalforge/slices-v1"
 MAX_ARTIFACT_BYTES = 1_048_576
 MAX_CASES = 1_000
 MAX_CRITERIA_PER_CASE = 20
+MAX_SLICES = 100
 MAX_TEXT_CODEPOINTS = 100_000
 _ID = re.compile(r"^[a-z0-9][a-z0-9._-]{0,63}$")
 
@@ -190,6 +194,49 @@ def parse_candidates(raw: bytes) -> tuple[CandidateOutput, ...]:
     return tuple(sorted(outputs, key=lambda output: output.case_id))
 
 
+def parse_slice_set(raw: bytes, dataset: Dataset) -> SliceSet:
+    root = _mapping(_load(raw), {"schema_version", "provenance", "slices"}, "slice artifact")
+    if root["schema_version"] != SLICE_SCHEMA_VERSION:
+        raise SchemaError("unsupported slice schema version")
+    provenance_data = _mapping(
+        root["provenance"],
+        {"source", "license", "retrieved_at", "schema_version"},
+        "slice provenance",
+    )
+    provenance = Provenance(
+        source=_text(provenance_data["source"], "slice source"),
+        license=_text(provenance_data["license"], "slice license"),
+        retrieved_at=_timestamp(provenance_data["retrieved_at"]),
+        schema_version=_text(
+            provenance_data["schema_version"],
+            "slice provenance schema version",
+        ),
+    )
+    values = root["slices"]
+    if not isinstance(values, list) or not 0 < len(values) <= MAX_SLICES:
+        raise SchemaError("slice count is invalid")
+    known_cases = {case.case_id for case in dataset.cases}
+    slices: list[SliceDefinition] = []
+    seen_slices: set[str] = set()
+    for value in values:
+        data = _mapping(value, {"slice_id", "case_ids"}, "slice")
+        slice_id = _identifier(data["slice_id"], "slice_id")
+        if slice_id in seen_slices:
+            raise SchemaError("duplicate slice_id")
+        seen_slices.add(slice_id)
+        members = data["case_ids"]
+        if not isinstance(members, list) or not 0 < len(members) <= MAX_CASES:
+            raise SchemaError("slice member count is invalid")
+        case_ids = tuple(_identifier(member, "slice case_id") for member in members)
+        if len(set(case_ids)) != len(case_ids):
+            raise SchemaError("duplicate slice case_id")
+        unknown = sorted(set(case_ids) - known_cases)
+        if unknown:
+            raise SchemaError(f"slice contains unknown case IDs: {unknown}")
+        slices.append(SliceDefinition(slice_id, tuple(sorted(case_ids))))
+    return SliceSet(provenance, tuple(sorted(slices, key=lambda item: item.slice_id)))
+
+
 def dataset_document(dataset: Dataset) -> dict[str, object]:
     return {
         "schema_version": SCHEMA_VERSION,
@@ -265,3 +312,23 @@ def canonical_dataset(dataset: Dataset) -> bytes:
 
 def canonical_candidates(outputs: tuple[CandidateOutput, ...]) -> bytes:
     return canonical_bytes(candidates_document(outputs))
+
+
+def slice_document(slice_set: SliceSet) -> dict[str, object]:
+    return {
+        "schema_version": SLICE_SCHEMA_VERSION,
+        "provenance": {
+            "source": slice_set.provenance.source,
+            "license": slice_set.provenance.license,
+            "retrieved_at": slice_set.provenance.retrieved_at,
+            "schema_version": slice_set.provenance.schema_version,
+        },
+        "slices": [
+            {"slice_id": item.slice_id, "case_ids": list(item.case_ids)}
+            for item in slice_set.slices
+        ],
+    }
+
+
+def canonical_slice_set(slice_set: SliceSet) -> bytes:
+    return canonical_bytes(slice_document(slice_set))

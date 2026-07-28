@@ -10,10 +10,10 @@
 
 ## v0.2: comparison methodology
 
-- [ ] Paired run comparison with explicit case alignment.
-- [ ] Seeded bootstrap intervals and minimum sample warnings.
-- [ ] Slice definitions that preserve denominators and provenance.
-- [ ] Regression policy without arbitrary “quality” claims.
+- [x] Paired run comparison with explicit case alignment.
+- [x] Seeded bootstrap intervals and minimum sample warnings.
+- [x] Slice definitions that preserve denominators and provenance.
+- [x] Regression policy without arbitrary “quality” claims.
 
 ## v0.3: judge research
 

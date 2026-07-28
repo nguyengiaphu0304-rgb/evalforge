@@ -1,0 +1,23 @@
+{
+  "schema_version": "evalforge/slices-v1",
+  "provenance": {
+    "source": "EvalForge generated synthetic slice fixture",
+    "license": "CC0-1.0",
+    "retrieved_at": "2026-07-29T00:00:00Z",
+    "schema_version": "slice-fixture/v1"
+  },
+  "slices": [
+    {
+      "slice_id": "structured",
+      "case_ids": ["json-profile"]
+    },
+    {
+      "slice_id": "textual",
+      "case_ids": ["welcome", "safety-note"]
+    },
+    {
+      "slice_id": "all-cases",
+      "case_ids": ["welcome", "json-profile", "safety-note"]
+    }
+  ]
+}

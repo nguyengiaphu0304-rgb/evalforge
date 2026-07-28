@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "evalforge"
-version = "0.1.0"
+version = "0.2.0"
 description = "A deterministic, provenance-first evaluation engine"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -40,6 +40,14 @@ ignore = ["COM812", "D203", "D213"]
 "src/evalforge/io.py" = ["C901", "D100", "D103", "EM101", "EM102", "PLR2004", "TRY003"]
 "src/evalforge/engine.py" = ["D100", "D103", "EM101", "EM102", "PLR2004", "TRY003"]
 "src/evalforge/canonical.py" = ["EM101", "TRY003"]
+"src/evalforge/comparison.py" = [
+  "D103",
+  "EM101",
+  "EM102",
+  "PLR0913",
+  "PLR2004",
+  "TRY003",
+]
 "src/evalforge/models.py" = ["D100", "D101"]
 "tests/**" = [
   "D100",

@@ -19,3 +19,18 @@ Limits: 1 MiB per artifact, 1,000 cases or outputs, 20 criteria per case,
 depth 32.
 
 SHA-256 establishes change detection and lineage, not publisher identity.
+
+## Slice artifacts
+
+`evalforge/slices-v1` requires provenance and one to 100 slice definitions.
+Each slice has a normalized ID and one or more unique, known case IDs. Slices
+may overlap. Ordering is canonicalized; duplicate, empty, unknown, excessive,
+or unexpected values fail closed.
+
+## Comparison reports
+
+`evalforge/comparison-v1` binds the canonical dataset, candidate A, candidate B,
+and slice hashes. It records the method version, unsigned 64-bit seed, resample
+count, confidence, thresholds, complete 5×5 status transitions, pass-indicator
+delta, interval, warnings, and per-slice summaries. Prompt and output bodies are
+not copied into the report.

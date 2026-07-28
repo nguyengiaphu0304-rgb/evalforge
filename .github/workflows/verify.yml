@@ -47,6 +47,10 @@ jobs:
           cp demo-output/report.json demo-output/report-first.json
           python scripts/demo.py --output demo-output/report.json
           cmp demo-output/report-first.json demo-output/report.json
+          python scripts/comparison_demo.py --output demo-output/comparison.json
+          cp demo-output/comparison.json demo-output/comparison-first.json
+          python scripts/comparison_demo.py --output demo-output/comparison.json
+          cmp demo-output/comparison-first.json demo-output/comparison.json
       - name: Build and inspect package
         run: |
           python -m build
@@ -63,7 +67,7 @@ jobs:
           with zipfile.ZipFile(wheel) as archive:
               names = archive.namelist()
               assert len(names) == len(set(names)) <= 64
-              assert all(name.startswith(("evalforge/", "evalforge-0.1.0.dist-info/")) for name in names)
+              assert all(name.startswith(("evalforge/", "evalforge-0.2.0.dist-info/")) for name in names)
           with tarfile.open(sdist, "r:gz") as archive:
               members = archive.getmembers()
               assert len(members) <= 128
@@ -75,7 +79,7 @@ jobs:
           python -m venv /tmp/evalforge-wheel
           /tmp/evalforge-wheel/bin/python -m pip install --no-index --no-deps dist/*.whl
           /tmp/evalforge-wheel/bin/python -I -c \
-            "import evalforge; assert evalforge.__version__ == '0.1.0'"
+            "import evalforge; assert evalforge.__version__ == '0.2.0'"
       - name: Dependency consistency
         run: python -m pip check
       - name: Vulnerability audit
