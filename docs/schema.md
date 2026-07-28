@@ -53,3 +53,27 @@ identity-free pair overlap; and an evaluator-versus-human confusion matrix.
 Missing, timeout, and error evaluator states remain explicit. The envelope has a
 payload checksum and must reproduce byte-for-byte from all three source
 artifacts.
+
+## Recorded-judge artifacts
+
+`evalforge/judge-records-v1` binds a complete set of records to the canonical
+dataset and candidate hashes. Configuration contains normalized adapter,
+provider, model, model-version, response-schema identifiers, and a lowercase
+policy SHA-256. Endpoints, credentials, provider request IDs, and free text are
+not schema fields.
+
+Every dataset case has exactly one record whose `request_sha256` must match the
+recomputed `evalforge/judge-request-v1` envelope. That envelope stores trusted
+policy, response schema, and criteria separately from untrusted case input,
+candidate status, and candidate output.
+
+Statuses are `ok`, `timeout`, `error`, and `truncated`. Only `ok` has a response:
+one `pass`, `fail`, or `abstain` decision and one to ten allowlisted reason
+codes. Attempts, input/output tokens, latency milliseconds, and cost in
+micro-USD are bounded non-boolean integers.
+
+`evalforge/judge-evidence-v1` records artifact lineage, non-sensitive
+configuration, aggregate statuses/decisions/usage, and human-calibrated confusion
+counts. It excludes request bodies, request hashes, candidate outputs, prompts,
+annotator IDs, and exception text. The checksum envelope must reproduce
+byte-for-byte from all source artifacts.

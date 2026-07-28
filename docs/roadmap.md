@@ -15,10 +15,19 @@
 - [x] Slice definitions that preserve denominators and provenance.
 - [x] Regression policy without arbitrary “quality” claims.
 
-## v0.3: judge research
+## v0.3: human evidence
 
 - [x] Human-label schema and inter-rater agreement evidence.
-- [ ] Calibrated judge adapters with prompt-injection boundaries.
-- [ ] Cost, retry, truncation, and provider-version lineage.
+
+## v0.4: recorded judge boundary
+
+- [x] Recorded judge adapter with structural prompt-injection boundaries.
+- [x] Cost, retry, truncation, and provider-version lineage.
+- [x] Human-calibration and judge-coverage release gates.
+
+## v1.0: release candidate
+
+- [ ] Reproducible release evidence and verified package artifacts.
+- [ ] Publication checklist, release notes, and residual-risk review.
 
 No live integration is accepted before its privacy and failure model is tested.

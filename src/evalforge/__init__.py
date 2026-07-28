@@ -14,10 +14,18 @@ from evalforge.human import (
 )
 from evalforge.io import (
     SchemaError,
+    judge_request_document,
     parse_candidates,
     parse_dataset,
     parse_human_labels,
+    parse_judge_records,
     parse_slice_set,
+)
+from evalforge.judge import (
+    JudgeEvidenceError,
+    analyze_judge_evidence,
+    create_judge_evidence_report,
+    verify_judge_evidence_report,
 )
 from evalforge.models import (
     AgreementStatistics,
@@ -35,6 +43,11 @@ from evalforge.models import (
     HumanAnnotation,
     HumanEvidenceReport,
     HumanLabelSet,
+    JudgeCalibration,
+    JudgeConfiguration,
+    JudgeEvidenceReport,
+    JudgeRecord,
+    JudgeRecordSet,
     PairAgreement,
     Provenance,
     SliceComparison,
@@ -43,7 +56,7 @@ from evalforge.models import (
     Summary,
 )
 
-__version__ = "0.3.0"
+__version__ = "0.4.0"
 
 __all__ = [
     "AgreementStatistics",
@@ -64,6 +77,12 @@ __all__ = [
     "HumanEvidenceError",
     "HumanEvidenceReport",
     "HumanLabelSet",
+    "JudgeCalibration",
+    "JudgeConfiguration",
+    "JudgeEvidenceError",
+    "JudgeEvidenceReport",
+    "JudgeRecord",
+    "JudgeRecordSet",
     "PairAgreement",
     "Provenance",
     "SchemaError",
@@ -73,15 +92,20 @@ __all__ = [
     "Summary",
     "__version__",
     "analyze_human_evidence",
+    "analyze_judge_evidence",
     "create_comparison_report",
     "create_human_evidence_report",
+    "create_judge_evidence_report",
     "create_report",
     "evaluate",
+    "judge_request_document",
     "parse_candidates",
     "parse_dataset",
     "parse_human_labels",
+    "parse_judge_records",
     "parse_slice_set",
     "verify_comparison_report",
     "verify_human_evidence_report",
+    "verify_judge_evidence_report",
     "verify_report",
 ]

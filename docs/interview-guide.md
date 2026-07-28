@@ -74,3 +74,31 @@ The confusion matrix compares deterministic evaluator outcomes with resolved
 human consensus only. A small sample, low or undefined agreement, or evaluator
 non-success forces `insufficient_evidence`. Passing those gates still would not
 prove the labels representative, unbiased, or suitable for deployment.
+
+## Why build a recorded judge before a live adapter?
+
+It makes schema, lineage, failure accounting, privacy, and calibration testable
+without provider availability, credentials, cost, or model drift. A live API
+cannot repair an evidence format that silently drops truncation or accepts
+unbound responses.
+
+## How is prompt injection bounded?
+
+EvalForge creates a typed object with separate `trusted` and `untrusted` fields
+and hashes that object. Candidate text can contain role names, delimiters, or
+instruction-like strings without changing trusted fields. The core never
+concatenates a prompt. This is a structural invariant, not proof that a future
+model will resist semantic prompt injection.
+
+## Why integer micro-USD and explicit attempts?
+
+Integer accounting avoids binary floating-point drift and makes retry cost
+auditable. The report retains total attempts, tokens, latency, and cost, but
+those values are recorded claims rather than verified provider invoices.
+
+## Why gate on both humans and judge coverage?
+
+A judge cannot be calibrated against unresolved or low-agreement labels. Even
+with adequate human evidence, abstentions and operational failures reduce judge
+coverage. Low sample, low/undefined alpha, coverage below 95%, or any recorded
+judge non-success forces `insufficient_evidence`.

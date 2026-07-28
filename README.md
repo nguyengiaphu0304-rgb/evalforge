@@ -1,7 +1,7 @@
 # EvalForge
 
 EvalForge is a provenance-first evaluation engine for recorded AI-system
-outputs. Its v0.3 core makes narrow deterministic claims: it validates bounded
+outputs. Its v0.4 core makes narrow deterministic claims: it validates bounded
 artifacts, preserves every case in the denominator, reproduces reports
 byte-for-byte, independently replays stored outcomes, and compares paired runs
 with explicit uncertainty. It also measures agreement in provenance-bound human
@@ -31,6 +31,12 @@ real model is accurate.
   evaluator-versus-human confusion counts.
 - Low-sample, undefined-agreement, and evaluator-non-success warnings that block
   quality claims.
+- Recorded-judge artifacts with canonical request binding, strict structured
+  decisions, and explicit timeout/error/truncation states.
+- Separate trusted policy and untrusted case/candidate fields; no prompt string
+  is assembled by the core.
+- Integer retry, token, latency, and micro-USD lineage with human-calibrated
+  coverage gates.
 - Offline synthetic fixtures with no provider, private data, or benchmark claim.
 - Dependency-free typed runtime with Python 3.11–3.13 CI.
 
@@ -43,6 +49,7 @@ python -m pip install -e .
 python scripts/demo.py --output demo-output/report.json
 python scripts/comparison_demo.py --output demo-output/comparison.json
 python scripts/human_evidence_demo.py --output demo-output/human-evidence.json
+python scripts/judge_evidence_demo.py --output demo-output/judge-evidence.json
 python -m pytest
 ```
 
@@ -59,6 +66,10 @@ synthetic cases. Its small sample and disagreement deliberately produce
 `insufficient_evidence`; it demonstrates arithmetic and failure handling, not
 human or evaluator quality.
 
+The recorded-judge demo uses only stored synthetic decisions. Its low human
+sample, low agreement, 50% resolved-case coverage, and one truncated record force
+`insufficient_evidence`. It makes no live request and measures no real model.
+
 ## Verification
 
 ```bash
@@ -69,6 +80,7 @@ pytest
 python scripts/demo.py --output demo-output/report.json
 python scripts/comparison_demo.py --output demo-output/comparison.json
 python scripts/human_evidence_demo.py --output demo-output/human-evidence.json
+python scripts/judge_evidence_demo.py --output demo-output/judge-evidence.json
 python -m build
 python -m pip check
 python -m pip_audit --skip-editable
@@ -80,10 +92,12 @@ python -m pip_audit --skip-editable
 - [Schema contract](docs/schema.md)
 - [Comparison methodology](docs/comparison-methodology.md)
 - [Human-evidence methodology](docs/human-evidence.md)
+- [Recorded-judge contract](docs/judge-contract.md)
 - [Threat model](docs/threat-model.md)
 - [ADR-001](docs/adr/001-deterministic-offline-core.md)
 - [ADR-002](docs/adr/002-paired-bootstrap-and-slices.md)
 - [ADR-003](docs/adr/003-human-consensus-and-nominal-alpha.md)
+- [ADR-004](docs/adr/004-recorded-judge-boundary.md)
 - [Roadmap](docs/roadmap.md)
 - [Interview guide](docs/interview-guide.md)
 
@@ -92,8 +106,10 @@ python -m pip_audit --skip-editable
 Criteria can still be unrepresentative or poorly written. SHA-256 does not
 authenticate a publisher. NFC does not eliminate Unicode confusables. Reports
 retain case IDs. There is no sandbox, encryption, signing, live provider,
-LLM-as-a-judge, identity service, adjudication workflow, causal inference,
+provider SDK, identity service, adjudication workflow, causal inference,
 multiple-comparison correction, deployment, or production telemetry. Human
 label IDs are pseudonyms, not anonymity guarantees; case membership and vote
 patterns can still be identifying. Alpha and bootstrap intervals describe the
 declared samples and do not establish general model or annotator quality.
+Structural request separation reduces accidental instruction mixing but cannot
+prove that a model would ignore adversarial content.
