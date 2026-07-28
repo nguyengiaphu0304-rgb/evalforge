@@ -1,0 +1,82 @@
+name: verify
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+      - name: Install verification tools
+        run: |
+          python -m pip install "pip>=26.1.2" "setuptools>=83.0.0"
+          python -m pip install \
+            "hatchling==1.28.0" \
+            "build==1.4.0" \
+            "ruff==0.14.14" \
+            "mypy==1.19.1" \
+            "pytest==9.0.3" \
+            "pip-audit==2.10.0"
+          python -m pip install --no-deps -e .
+      - name: Lint and formatting
+        run: |
+          ruff check .
+          ruff format --check .
+      - name: Static typing
+        run: mypy src scripts
+      - name: Tests
+        run: pytest
+      - name: Reproducible synthetic demo
+        run: |
+          mkdir demo-output
+          python scripts/demo.py --output demo-output/report.json
+          cp demo-output/report.json demo-output/report-first.json
+          python scripts/demo.py --output demo-output/report.json
+          cmp demo-output/report-first.json demo-output/report.json
+      - name: Build and inspect package
+        run: |
+          python -m build
+          python - <<'PY'
+          import pathlib
+          import tarfile
+          import zipfile
+
+          dist = pathlib.Path("dist")
+          wheel, = dist.glob("*.whl")
+          sdist, = dist.glob("*.tar.gz")
+          assert wheel.stat().st_size < 1_048_576
+          assert sdist.stat().st_size < 1_048_576
+          with zipfile.ZipFile(wheel) as archive:
+              names = archive.namelist()
+              assert len(names) == len(set(names)) <= 64
+              assert all(name.startswith(("evalforge/", "evalforge-0.1.0.dist-info/")) for name in names)
+          with tarfile.open(sdist, "r:gz") as archive:
+              members = archive.getmembers()
+              assert len(members) <= 128
+              assert len({member.name for member in members}) == len(members)
+              assert all(member.isfile() or member.isdir() for member in members)
+          PY
+      - name: Isolated import smoke
+        run: |
+          python -m venv /tmp/evalforge-wheel
+          /tmp/evalforge-wheel/bin/python -m pip install --no-index --no-deps dist/*.whl
+          /tmp/evalforge-wheel/bin/python -I -c \
+            "import evalforge; assert evalforge.__version__ == '0.1.0'"
+      - name: Dependency consistency
+        run: python -m pip check
+      - name: Vulnerability audit
+        run: python -m pip_audit --skip-editable
