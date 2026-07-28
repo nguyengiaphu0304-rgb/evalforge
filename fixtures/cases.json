@@ -1,0 +1,44 @@
+{
+  "schema_version": "evalforge/v1",
+  "provenance": {
+    "source": "EvalForge generated synthetic fixture",
+    "license": "CC0-1.0",
+    "retrieved_at": "2026-07-29T00:00:00Z",
+    "schema_version": "fixture/v1"
+  },
+  "cases": [
+    {
+      "case_id": "json-profile",
+      "input": "Return the synthetic profile as JSON.",
+      "criteria": [
+        {
+          "criterion_id": "strict-json",
+          "kind": "json_equal",
+          "expected": {"active": true, "name": "Ada"}
+        }
+      ]
+    },
+    {
+      "case_id": "welcome",
+      "input": "Return the synthetic greeting.",
+      "criteria": [
+        {
+          "criterion_id": "exact",
+          "kind": "exact_text",
+          "expected": "Welcome"
+        }
+      ]
+    },
+    {
+      "case_id": "safety-note",
+      "input": "Include the required synthetic safety phrase.",
+      "criteria": [
+        {
+          "criterion_id": "required-fragment",
+          "kind": "contains_text",
+          "expected": "verify independently"
+        }
+      ]
+    }
+  ]
+}

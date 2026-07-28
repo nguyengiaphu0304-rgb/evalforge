@@ -1,0 +1,20 @@
+{
+  "schema_version": "evalforge/v1",
+  "outputs": [
+    {
+      "case_id": "safety-note",
+      "status": "error",
+      "output": null
+    },
+    {
+      "case_id": "welcome",
+      "status": "ok",
+      "output": "Welcome"
+    },
+    {
+      "case_id": "json-profile",
+      "status": "ok",
+      "output": "{\"name\":\"Ada\",\"active\":true}"
+    }
+  ]
+}
