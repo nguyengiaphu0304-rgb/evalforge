@@ -102,3 +102,14 @@ A judge cannot be calibrated against unresolved or low-agreement labels. Even
 with adequate human evidence, abstentions and operational failures reduce judge
 coverage. Low sample, low/undefined alpha, coverage below 95%, or any recorded
 judge non-success forces `insufficient_evidence`.
+
+## Why canonicalize only the sdist?
+
+The wheel is the installable runtime artifact, so two wheel builds must match
+without transformation. Source distributions may inherit tar/gzip timestamps,
+ownership, modes, and ordering from the build backend. The verifier first
+rejects unsafe or unexpected members, then canonicalizes only that transport
+metadata and requires the two resulting archives to match.
+
+This is reproducibility and drift evidence, not publisher authentication.
+Artifact signing and trusted build provenance remain separate future controls.

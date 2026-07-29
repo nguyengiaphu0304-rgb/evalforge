@@ -1,6 +1,6 @@
 # Architecture
 
-EvalForge v0.4 has seven boundaries:
+EvalForge v1.0 has nine boundaries:
 
 1. `io.py` parses untrusted UTF-8 JSON into immutable, versioned domain objects.
 2. `canonical.py` normalizes Unicode and JSON before hashing or comparison.
@@ -17,6 +17,12 @@ EvalForge v0.4 has seven boundaries:
 7. `judge.py` aggregates complete recorded judge outcomes, binds them to
    canonical typed requests, preserves operational failures and integer costs,
    and calibrates decisions against the existing human-evidence boundary.
+8. `release_evidence.py` regenerates all four synthetic reports, independently
+   verifies them, and binds exact fixture and generator bytes into a canonical
+   SHA-256 manifest.
+9. `release_verify.py` validates and reproduces wheel/sdist artifacts, normalizes
+   permitted sdist transport metadata, installs the wheel without an index or
+   dependencies, and emits checksums. It does not sign or publish artifacts.
 
 The report intentionally excludes prompts and candidate output text. It contains
 case IDs, check outcomes, aggregate counts, and SHA-256 lineage. This reduces
