@@ -25,6 +25,9 @@
   exception text are not accepted artifact fields.
 - Timeout, error, truncation, abstention, low coverage, and failed human gates
   cannot become a positive calibration conclusion.
+- Checked release evidence cannot drift from fixtures or its generator.
+- Release archives cannot contain traversal, duplicate, symlink, special,
+  forbidden, wrongly versioned, or resource-exhausting members.
 
 ## Untrusted inputs
 
@@ -56,3 +59,7 @@ trusted policy. Policy hashes authenticate neither authorship nor safety.
 Recorded usage metadata can be false even when internally consistent. Micro-USD
 costs exclude undeclared provider charges. No live timeout, retry, rate-limit,
 credential, egress, or data-retention boundary has been exercised.
+Build reproducibility does not authenticate the builder. SHA-256 detects byte
+changes only when compared with a trusted digest. The deterministic sdist
+normalizes timestamps, ownership, modes, and ordering; it does not claim that
+the raw build-backend tarball is stable.

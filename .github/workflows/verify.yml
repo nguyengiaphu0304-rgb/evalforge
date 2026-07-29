@@ -59,36 +59,21 @@ jobs:
           cp demo-output/judge-evidence.json demo-output/judge-evidence-first.json
           python scripts/judge_evidence_demo.py --output demo-output/judge-evidence.json
           cmp demo-output/judge-evidence-first.json demo-output/judge-evidence.json
-      - name: Build and inspect package
+      - name: Verify checked release evidence
         run: |
-          python -m build
-          python - <<'PY'
-          import pathlib
-          import tarfile
-          import zipfile
-
-          dist = pathlib.Path("dist")
-          wheel, = dist.glob("*.whl")
-          sdist, = dist.glob("*.tar.gz")
-          assert wheel.stat().st_size < 1_048_576
-          assert sdist.stat().st_size < 1_048_576
-          with zipfile.ZipFile(wheel) as archive:
-              names = archive.namelist()
-              assert len(names) == len(set(names)) <= 64
-              assert all(name.startswith(("evalforge/", "evalforge-0.4.0.dist-info/")) for name in names)
-          with tarfile.open(sdist, "r:gz") as archive:
-              members = archive.getmembers()
-              assert len(members) <= 128
-              assert len({member.name for member in members}) == len(members)
-              assert all(member.isfile() or member.isdir() for member in members)
-          PY
-      - name: Isolated import smoke
-        run: |
-          python -m venv /tmp/evalforge-wheel
-          /tmp/evalforge-wheel/bin/python -m pip install --no-index --no-deps dist/*.whl
-          /tmp/evalforge-wheel/bin/python -I -c \
-            "import evalforge; assert evalforge.__version__ == '0.4.0'"
+          python scripts/release_evidence.py \
+            --output-dir evidence/v1.0.0 \
+            --verify
+      - name: Build and verify release artifacts
+        run: python scripts/release_verify.py --output-dir release-artifacts
       - name: Dependency consistency
         run: python -m pip check
       - name: Vulnerability audit
         run: python -m pip_audit --skip-editable
+      - name: Upload verified release artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: evalforge-v1.0.0-python-${{ matrix.python-version }}
+          path: release-artifacts/
+          if-no-files-found: error
+          retention-days: 14

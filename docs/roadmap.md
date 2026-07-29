@@ -27,7 +27,8 @@
 
 ## v1.0: release candidate
 
-- [ ] Reproducible release evidence and verified package artifacts.
-- [ ] Publication checklist, release notes, and residual-risk review.
+- [x] Reproducible release evidence and verified package artifacts.
+- [x] Publication checklist, release notes, and residual-risk review.
+- [ ] Annotated tag and non-prerelease GitHub Release at the verified merge commit.
 
 No live integration is accepted before its privacy and failure model is tested.

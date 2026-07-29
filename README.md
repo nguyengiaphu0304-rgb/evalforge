@@ -1,7 +1,7 @@
 # EvalForge
 
 EvalForge is a provenance-first evaluation engine for recorded AI-system
-outputs. Its v0.4 core makes narrow deterministic claims: it validates bounded
+outputs. Its v1.0 release candidate makes narrow deterministic claims: it validates bounded
 artifacts, preserves every case in the denominator, reproduces reports
 byte-for-byte, independently replays stored outcomes, and compares paired runs
 with explicit uncertainty. It also measures agreement in provenance-bound human
@@ -50,6 +50,8 @@ python scripts/demo.py --output demo-output/report.json
 python scripts/comparison_demo.py --output demo-output/comparison.json
 python scripts/human_evidence_demo.py --output demo-output/human-evidence.json
 python scripts/judge_evidence_demo.py --output demo-output/judge-evidence.json
+python scripts/release_evidence.py --output-dir evidence/v1.0.0 --verify
+python scripts/release_verify.py --output-dir release-artifacts
 python -m pytest
 ```
 
@@ -81,7 +83,8 @@ python scripts/demo.py --output demo-output/report.json
 python scripts/comparison_demo.py --output demo-output/comparison.json
 python scripts/human_evidence_demo.py --output demo-output/human-evidence.json
 python scripts/judge_evidence_demo.py --output demo-output/judge-evidence.json
-python -m build
+python scripts/release_evidence.py --output-dir evidence/v1.0.0 --verify
+python scripts/release_verify.py --output-dir release-artifacts
 python -m pip check
 python -m pip_audit --skip-editable
 ```
@@ -98,6 +101,12 @@ python -m pip_audit --skip-editable
 - [ADR-002](docs/adr/002-paired-bootstrap-and-slices.md)
 - [ADR-003](docs/adr/003-human-consensus-and-nominal-alpha.md)
 - [ADR-004](docs/adr/004-recorded-judge-boundary.md)
+- [ADR-005](docs/adr/005-reproducible-release-artifacts.md)
+- [Release demo](docs/release-demo.md)
+- [v1.0.0 release notes](docs/releases/v1.0.0.md)
+- [Publication checklist](docs/releases/publication-checklist.md)
+- [Residual risks](docs/releases/residual-risks.md)
+- [Support and recovery matrix](docs/releases/support-matrix.md)
 - [Roadmap](docs/roadmap.md)
 - [Interview guide](docs/interview-guide.md)
 
@@ -113,3 +122,7 @@ patterns can still be identifying. Alpha and bootstrap intervals describe the
 declared samples and do not establish general model or annotator quality.
 Structural request separation reduces accidental instruction mixing but cannot
 prove that a model would ignore adversarial content.
+
+The repository remains a release candidate until an annotated tag and
+non-prerelease GitHub Release are published from the exact verified merge
+commit. Artifacts are checksummed but not signed.
